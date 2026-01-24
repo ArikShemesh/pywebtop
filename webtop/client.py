@@ -299,7 +299,6 @@ class WebtopClient:
         )
         return resp.json()
 
-
     async def get_pupil_schedule(
         self,
         *,
