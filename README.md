@@ -1,5 +1,10 @@
 # pywebtop
 
+
+[![PyPI version](https://badge.fury.io/py/pywebtop.svg)](https://badge.fury.io/py/pywebtop)
+[![Python Versions](https://img.shields.io/pypi/pyversions/pywebtop.svg)](https://pypi.org/project/pywebtop/)
+[![License](https://img.shields.io/github/license/t0mer/pywebtop.svg)](https://github.com/t0mer/pywebtop/blob/main/LICENSE)
+
 An unofficial async Python API wrapper for **Webtop** (SmartSchool educational platform). This library provides easy access to Webtop's student portal API endpoints for retrieving grades, homework, schedules, messages, notifications, and more.
 
 ## Features
