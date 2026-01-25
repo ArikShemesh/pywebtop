@@ -89,13 +89,6 @@ async def fetch_and_print_messages(client):
     except Exception as e:
         print(f"Failed to fetch messages: {e}")
 
-    except WebtopLoginError as e:
-        print(f"❌ Login failed: {e}")
-    except Exception as e:
-        print(f"❌ An error occurred: {e}")
-        import traceback
-        traceback.print_exc()
-
 if __name__ == "__main__":
     if asyncio.get_event_loop_policy().get_event_loop().is_closed():
          asyncio.set_event_loop(asyncio.new_event_loop())
