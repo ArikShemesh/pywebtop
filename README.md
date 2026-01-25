@@ -17,6 +17,7 @@ An unofficial async Python API wrapper for **Webtop** (SmartSchool educational p
 - 🔔 **Notifications** - Get unread notifications and notification settings
 - 📊 **Discipline Events** - Retrieve behavior/discipline records
 - ⚙️ **Configurable** - Custom base URL, timeout, and auto-login support
+- 👥 **Multi-Student Support** - Discover and switch between siblings/linked accounts
 
 ## Installation
 
@@ -121,6 +122,26 @@ session = await client.login()
 # session.school_name - school name
 # session.first_name, session.last_name - user names
 ```
+
+#### Managing Multiple Students
+If a parent account is linked to multiple students (e.g., siblings), you can discover and switch between them.
+##### `get_linked_students()`
+Get a list of all students linked to the current account.
+```python
+students = await client.get_linked_students()
+for student in students:
+    print(f"Name: {student.get('studentLogin')}, ID: {student.get('studentId')}")
+```
+
+##### `switch_student()`
+Switch the active session to a specific student. This updates the session context for all subsequent requests.
+
+```python
+# Switch to a student using their ID
+new_session = await client.switch_student(student_id="...")
+print(f"Switched to school: {new_session.school_name}")
+```
+
 
 #### Dashboard & Students
 
@@ -378,6 +399,25 @@ except Exception as e:
 ### Cookie Management
 
 Authentication is handled automatically via httpx's cookie jar. The token is stored as a cookie and included in all subsequent requests.
+
+### Obtaining the `data` Parameter
+
+The `data` parameter is an encryption key used by the Webtop API. To find your specific `data` value:
+
+1. **Use Browser DevTools:**
+   - Open your browser and navigate to the Webtop login page
+   - Open Developer Tools (F12)
+   - Go to the Network tab
+   - Log in to Webtop
+   - Find the `LoginByUserNameAndPassword` request
+   - Check the request payload - the `Data` field contains your encryption key
+
+2. **Default Value:**
+   - The default value `+Aabe7FAdVluG6Lu+0ibrA==` works for most SmartSchool installations
+   - If login fails, you may need to capture your specific `data` value using the method above
+
+**Note:** The `data` parameter appears to be institution-specific. Once you find the correct value for your school, it should remain constant.
+
 
 ## Configuration
 
