@@ -7,7 +7,7 @@ long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists
 
 setup(
     name="pywebtop",
-    version="0.0.1",
+    version="0.0.2",
     description="Unofficial async Python API wrapper for Webtop (SmartSchool)",
     long_description=long_description,
     long_description_content_type="text/markdown",
