@@ -162,6 +162,60 @@ class WebtopClient:
         logger.info("Auto-login triggered")
         await self.login()
 
+    async def switch_student(self, student_id: str, saved_user: str = "") -> WebtopSession:
+        """
+        Switch the active student context (e.g. for siblings in different schools).
+        
+        POST /server/api/user/ChangeUser
+        """
+        logger.info(f"Switching to student_id: {student_id[:10]}...")
+        try:
+            resp = await self._http.post(
+                "/server/api/user/ChangeUser",
+                json={
+                    "StudentId": student_id,
+                    "institutionCode": None,
+                    "savedUser": saved_user,
+                    "userType": None
+                },
+            )
+            
+            if resp.status_code >= 400:
+                logger.error(f"Switch student failed: {resp.status_code} {resp.text}")
+                raise WebtopLoginError(f"Switch student failed: {resp.text}")
+
+            data = resp.json()
+            if data.get("status") is not True:
+                 logger.error(f"Switch student returned status=false: {data}")
+                 raise WebtopLoginError(f"Switch student failed: {data}")
+                 
+            new_data = data.get("data")
+            if not new_data:
+                raise WebtopLoginError("Switch student succeeded but returned no data")
+
+            # Update session
+            token = new_data.get("token")
+            # Update cookie if token changed
+            if token:
+                self._http.cookies.set("webToken", token)
+            
+            self._session = WebtopSession(
+                token=token,
+                user_id=new_data.get("userId"),
+                student_id=new_data.get("id"), # Note: response uses 'id', request uses 'StudentId'
+                school_id=new_data.get("schoolId"),
+                school_name=new_data.get("schoolName"),
+                first_name=new_data.get("firstName"),
+                last_name=new_data.get("lastName"),
+                raw_login_data=new_data,
+            )
+            logger.info(f"Switched successfully to: {self._session.first_name} {self._session.last_name}")
+            return self._session
+
+        except Exception as e:
+            logger.error(f"Failed to switch student: {e}")
+            raise
+
     async def request(
         self,
         method: str,
@@ -202,6 +256,31 @@ class WebtopClient:
 
         return resp
 
+    async def get_linked_students(self) -> list[Dict[str, Any]]:
+        """
+        Get all students linked to this account (e.g. siblings in different schools).
+        
+        POST /server/api/user/GetMultipleUsersForUser
+        """
+        logger.info("Fetching linked students...")
+        try:
+            resp = await self.request(
+                "POST", 
+                "/server/api/user/GetMultipleUsersForUser", 
+                json={}
+            )
+            data = resp.json()
+            if data.get("status") is not True:
+                logger.error(f"Failed to get linked students: {data}")
+                raise WebtopRequestError(f"Failed to get linked students: {data}")
+            
+            students = data.get("data", [])
+            logger.info(f"Found {len(students)} linked students")
+            return students
+        except Exception as e:
+            logger.error(f"Failed to get linked students: {e}")
+            raise
+
     # -----------------------------
     # Endpoints
     # -----------------------------
@@ -219,7 +298,18 @@ class WebtopClient:
                 json={},
             )
             data = resp.json()
-            logger.info("Students dashboard fetched successfully")
+            if isinstance(data, dict) and 'data' in data:
+                 # Check if 'data' is the new structure (dict) or old (list)
+                 payload = data['data']
+                 if isinstance(payload, dict):
+                     # New format: It returns a config object. The actual students might be in
+                     # specific apps or the structure completely changed.
+                     # For now, return the raw payload so the user can parse it,
+                     # but log the structure for debugging.
+                     logger.info(f"Dashboard returned dictionary payload with keys: {payload.keys()}")
+                 elif isinstance(payload, list):
+                     logger.info(f"Dashboard returned list of {len(payload)} students")
+            
             return data
         except Exception as e:
             logger.error(f"Failed to get students: {e}")
